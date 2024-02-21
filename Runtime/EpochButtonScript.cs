@@ -13,6 +13,8 @@ public class EpochButtonScript : MonoBehaviour {
 
     public Sprite imageInactive;
     public Sprite imageActive;
+    
+    
     private Button button;
     private Image image;
 
@@ -45,13 +47,19 @@ public class EpochButtonScript : MonoBehaviour {
     void Start() {
         button = GetComponent<Button>();
         image = GetComponent<Image>();
-        button.onClick.AddListener(ChangeImage);
+        
+        
+        button.onClick.AddListener(OnButtonPressed);
         
         // Start screen capture routine
         StartCoroutine(ScreenCaptureRoutine());
     }
 
-    private void ChangeImage() {
+    private void StartNewSession() {
+        
+    }
+
+    private void OnButtonPressed() {
         if (isPressed == false) {
             image.sprite = imageActive;
             isPressed = true;

@@ -17,7 +17,11 @@ typedef struct {
 } NewSession;
 
 typedef struct ManagedEpochCLI ManagedEpochCLI;
-ManagedEpochCLI* epoch_cli_new(const unsigned char* build_path_ptr, size_t build_path_len, _Bool verbose);
+ManagedEpochCLI* epoch_cli_new(
+    const char* build_path,
+    const char* log_path,
+    _Bool verbose
+);
 
 void epoch_cli_initialize_ffmpeg_encoder_consumer(
     ManagedEpochCLI* cli,
