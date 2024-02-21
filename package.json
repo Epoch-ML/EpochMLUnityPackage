@@ -1,0 +1,25 @@
+{
+  "name": "com.epochml.com.epochml.unityplugin",
+  "displayName": "EpochML Unity Plugin",
+  "version": "0.0.1",
+  "unity": "2019.3",
+  "description": "Epoch ML's Unity Plugin",
+  "keywords": [
+    "epochML"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Epoch ML",
+    "email": "info@epochml.com",
+    "url": "https://epochml.com/"
+  },
+  "homepage": "https://web.epochml.com/",
+  "bugs": {
+    "url": "https://github.com/EpochML/unity-plugin/issues",
+    "email": "support@epochml.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:EpochML/unity-plugin.git"
+  }
+}
