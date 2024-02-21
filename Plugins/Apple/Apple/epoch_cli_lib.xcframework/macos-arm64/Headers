@@ -1,0 +1,95 @@
+//
+//  EpochCLI.h
+//  SampleEpochProject
+//
+//  Created by Idan Beck on 2/17/24.
+//
+
+#ifndef EpochCLI_h
+#define EpochCLI_h
+
+#include <stdint.h> // For uint32_t, uint64_t
+#include <stdbool.h> // For bool in C99
+
+typedef struct {
+    uint32_t id;
+    const char* uri;
+} NewSession;
+
+typedef struct ManagedEpochCLI ManagedEpochCLI;
+ManagedEpochCLI* epoch_cli_new(const unsigned char* build_path_ptr, size_t build_path_len, _Bool verbose);
+
+void epoch_cli_initialize_ffmpeg_encoder_consumer(
+    ManagedEpochCLI* cli,
+    const char* video_filename,
+    unsigned int framerate,
+    unsigned int source_width, unsigned int source_height,
+    unsigned int target_width, unsigned int target_height
+);
+    
+NewSession epoch_cli_login_auth_and_start_new_session(
+    ManagedEpochCLI* cli,
+    const char* email,
+    const char* password,
+    const char* project_uri
+);
+
+void epoch_cli_upload_video_to_session_uri(
+    ManagedEpochCLI* cli,
+    const char* session_uri,
+    const char* video_filename
+);
+
+void epoch_cli_update_session_is_uploading(
+    ManagedEpochCLI* cli,
+    uint32_t session_id,
+    bool is_uploading
+);
+
+const char* epoch_cli_start_new_session(
+    ManagedEpochCLI* cli,
+    const char* project_uri
+);
+
+void epoch_cli_complete_session(
+    ManagedEpochCLI* cli,
+    const char* session_uri
+);
+
+void epoch_cli_finalize_ffmpeg_encoder_consumer(
+    ManagedEpochCLI* cli
+);
+
+void epoch_cli_encode_frame(
+    ManagedEpochCLI* cli,
+    uint64_t time_us,
+    uint32_t frame_idx,
+    uint32_t source_width, uint32_t source_height,
+    const unsigned char* frame_buffer_ptr,
+    uint32_t frame_buffer_len
+);
+
+void epoch_cli_destroy(
+    ManagedEpochCLI* cli
+);
+
+void epoch_cli_initialize_with_port(
+    ManagedEpochCLI* cli,
+    const char* hostname,
+    int port,
+    int secure // Use bool for C99 or int for broader compatibility
+);
+
+void epoch_cli_initialize(
+    ManagedEpochCLI* cli,
+    const char* hostname,
+    int secure // Use bool for C99 or int for broader compatibility
+);
+
+void epoch_cli_login(
+    ManagedEpochCLI* cli,
+    const char* email,
+    const char* password
+);
+
+#endif /* EpochCLI_h */
