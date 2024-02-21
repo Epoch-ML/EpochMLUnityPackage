@@ -13,13 +13,13 @@
     "email": "info@epochml.com",
     "url": "https://epochml.com/"
   },
-  "homepage": "https://web.epochml.com/",
+  "homepage": "https://epochml.com/",
   "bugs": {
     "url": "https://github.com/EpochML/unity-plugin/issues",
     "email": "support@epochml.com"
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@github.com:EpochML/unity-plugin.git"
+    "url": "git@github.com:Epoch-ML/EpochMLUnityPackage.git"
   }
 }
