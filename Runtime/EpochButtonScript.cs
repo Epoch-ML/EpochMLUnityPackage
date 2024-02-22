@@ -21,34 +21,31 @@ public class EpochButtonScript : MonoBehaviour {
 
     private string epochCLIBuildPath = "epoch_cli_build_path";
     
-    
     [Header("Epoch Settings")]
     public string epochCLIHostname = "dev.epochml.com";
     public string epochCLIEmail = "";
     public string epochCLIPassword = "";
     public string epochCLIProjectURI = "7c95ad89";
     
-    [SerializeField]
     private string epochSessionURI = "";
-    [SerializeField]
     private uint epochSessionID = 0;
-    
     private string logFilename = "epoch_cli_lib.log";
     
     [Header("Video Settings")]
-    private string videoFilename = "temp_video.mp4";
-    private string encoderCodec = "libx264";
     public string sourcePixelFormat = "bgra";
     public string targetPixelFormat = "yuv420p";
     public uint framerate = 20;
-    private uint sourceWidth = 0;
-    private uint sourceHeight = 0;
     public uint targetWidth = 1280;
     public uint targetHeight = 720;
     
+    private uint sourceWidth = 0;
+    private uint sourceHeight = 0;
+    private string videoFilename = "temp_video.mp4";
+    private string encoderCodec = "libx264";
+    
     public Stopwatch stopwatch;
 
-    [FormerlySerializedAs("frameIndex")] public uint frameIdx = 0;
+    private uint frameIdx = 0;
     
     private bool isPressed = false;
     private bool isCLIReady = false;
