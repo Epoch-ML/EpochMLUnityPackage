@@ -211,7 +211,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   imageInactive: {fileID: 21300000, guid: 567b5472cd1774203b3bd5d3219be06b, type: 3}
   imageActive: {fileID: 21300000, guid: 9ff53349263bf4921a7165ad15bc84b8, type: 3}
-  epochCLIHostname: dev.epochml.com
+  epochCLIHostname: epochml.com
   epochCLIEmail: 
   epochCLIPassword: 
   epochCLIProjectURI: 
