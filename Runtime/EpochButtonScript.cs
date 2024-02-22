@@ -7,32 +7,44 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using System.Threading.Tasks;
+
 using Debug = UnityEngine.Debug;
 
 public class EpochButtonScript : MonoBehaviour {
 
     public Sprite imageInactive;
     public Sprite imageActive;
-    
-    
+
     private Button button;
     private Image image;
 
-    public string epochCLIBuildPath = "epoch_cli_build_path";
-    public string epochCLIHostname = "dev.epochml.com";
-    public string epochCLIEmail = "idan@epochml.com";
-    public string epochCLIPassword = "Fasfusa19!";
-    public string epochCLIProjectURI = "7c95ad89";
-    public string videoFilename = "temp_video.mp4";
-
-    public string epochSessionURI = "";
-    public uint epochSessionID = 0;
+    private string epochCLIBuildPath = "epoch_cli_build_path";
     
+    
+    [Header("Epoch Settings")]
+    public string epochCLIHostname = "dev.epochml.com";
+    public string epochCLIEmail = "";
+    public string epochCLIPassword = "";
+    public string epochCLIProjectURI = "7c95ad89";
+    
+    [SerializeField]
+    private string epochSessionURI = "";
+    [SerializeField]
+    private uint epochSessionID = 0;
+    
+    private string logFilename = "epoch_cli_lib.log";
+    
+    [Header("Video Settings")]
+    private string videoFilename = "temp_video.mp4";
+    private string encoderCodec = "libx264";
+    public string sourcePixelFormat = "bgra";
+    public string targetPixelFormat = "yuv420p";
     public uint framerate = 20;
-    public uint sourceWidth = 0;
-    public uint sourceHeight = 0;
-    public uint targetWidth = 0;
-    public uint targetHeight = 0;
+    private uint sourceWidth = 0;
+    private uint sourceHeight = 0;
+    public uint targetWidth = 1280;
+    public uint targetHeight = 720;
     
     public Stopwatch stopwatch;
 
@@ -42,88 +54,87 @@ public class EpochButtonScript : MonoBehaviour {
     private bool isCLIReady = false;
 
     private IntPtr cliInstance;
+
+    private bool rotateImage = false;
+    private float rotationSpeed = -150.0f;
+    
+    private bool isNewSessionTaskCompleted = false;
+    private Task<string> newSessionTask;
+    
+    private bool isUploadSessionTaskCompleted = false;
+    private Task<string> uploadSessionTask;
     
     // Start is called before the first frame update
     void Start() {
         button = GetComponent<Button>();
-        image = GetComponent<Image>();
         
-        
+        Transform epochButtonImageTransform = transform.Find("EpochButtonImage");
+        image = epochButtonImageTransform.GetComponent<Image>();
+
         button.onClick.AddListener(OnButtonPressed);
         
         // Start screen capture routine
         StartCoroutine(ScreenCaptureRoutine());
     }
 
-    private void StartNewSession() {
-        
+    // Update is called once per frame
+    void Update() {
+        if(rotateImage) {
+            image.transform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);    
+        }
+
+        if (newSessionTask != null && newSessionTask.IsCompleted && !isNewSessionTaskCompleted) {
+            isNewSessionTaskCompleted = true;
+            Debug.Log("New Session task complete");
+
+            image.sprite = imageActive;
+            isCLIReady = true;
+            rotateImage = false;
+            image.transform.rotation = Quaternion.identity;
+            stopwatch = Stopwatch.StartNew();
+            
+        }
+
+        if (uploadSessionTask != null && uploadSessionTask.IsCompleted && !isUploadSessionTaskCompleted) {
+            isUploadSessionTaskCompleted = true;
+            Debug.Log("Upload Session task completed");
+            rotateImage = false;
+            image.transform.rotation = Quaternion.identity;
+            image.sprite = imageInactive;
+        }
     }
 
-    private void OnButtonPressed() {
-        if (isPressed == false) {
-            image.sprite = imageActive;
-            isPressed = true;
-            
-            // initialize EpochCLI DLL
-            cliInstance = EpochCLI.epoch_cli_new(
-                System.Text.Encoding.UTF8.GetBytes(epochCLIBuildPath),
-                (ulong)(epochCLIBuildPath.Length),
-                true
-            );
+    private void StartNewSession() {
+        Debug.Log($"Running new session async task");
         
-            // Initialize 
-            Debug.Log("initializaing Epoch CLI");
-            EpochCLI.epoch_cli_initialize(
-                cliInstance, 
-                epochCLIHostname, 
-                1
-            );
+        isNewSessionTaskCompleted = false;
+        
+        logFilename = Path.Combine(Application.persistentDataPath, logFilename);
+        epochCLIBuildPath = Path.Combine(Application.persistentDataPath, epochCLIBuildPath);
+        videoFilename = Path.Combine(Application.persistentDataPath, videoFilename);
+        
+        // Screen resolution and apply aspect ratio to target 
+        sourceWidth = (uint)Screen.width;
+        sourceHeight = (uint)Screen.height;
+        
+        float screenAspectRatio = ((float)(sourceHeight) / (float)(sourceWidth));
+        targetHeight = (uint)((float)(targetWidth) * screenAspectRatio);
+        
+        newSessionTask = Task.Run(() => {
+            InitializeEpochCLI(epochCLIBuildPath, logFilename);
             
-            // Login 
-            Debug.Log("Logging in with Epoch CLI");
-            EpochCLI.epoch_cli_login(
-                cliInstance, 
-                epochCLIEmail, 
-                epochCLIPassword
-            );
+            StartNewSessionEpoch(videoFilename, sourceWidth, sourceHeight, targetWidth, targetHeight);
+            
+            return "new session task complete";
+        });
+    }
+    
+    private void CompleteAndUploadSession() {
+        Debug.Log($"Complete and upload session async task");
+        
+        isUploadSessionTaskCompleted = false;
 
-            sourceWidth = (uint)Screen.width;
-            sourceHeight = (uint)Screen.height;
-            targetWidth = sourceWidth;
-            targetHeight = sourceHeight;
-            
-            // initialize the encoder 
-            videoFilename = Path.Combine(Application.persistentDataPath, videoFilename);
-            Debug.Log($"Initialize Epoch CLI encoder with {sourceWidth}x{sourceHeight} -> {targetWidth}x{targetHeight}, saving to {videoFilename}");
-            EpochCLI.epoch_cli_initialize_ffmpeg_encoder_consumer(
-                cliInstance,
-                videoFilename,
-                framerate,
-                sourceWidth, sourceHeight,
-                targetWidth, targetHeight
-            );
-            
-            Debug.Log($"login, auth, and start new session");
-            var newSession = EpochCLI.epoch_cli_login_auth_and_start_new_session(
-                cliInstance,
-                epochCLIEmail,
-                epochCLIPassword,
-                epochCLIProjectURI
-            );
-            
-            epochSessionURI = Marshal.PtrToStringAnsi(newSession.Uri);
-            epochSessionID = newSession.Id;
-
-            isCLIReady = true;
-            stopwatch = Stopwatch.StartNew();
-
-        }
-        else {
-            image.sprite = imageInactive;
-            isPressed = false;
-            isCLIReady = false;
-            
-            // Finalize 
+        uploadSessionTask = Task.Run(() => {
             Debug.Log("Finalize encoder in Epoch CLI");
             EpochCLI.epoch_cli_finalize_ffmpeg_encoder_consumer(cliInstance);
             
@@ -148,14 +159,86 @@ public class EpochButtonScript : MonoBehaviour {
             EpochCLI.epoch_cli_destroy(cliInstance);
 
             cliInstance = IntPtr.Zero;
+            
+            return "complete and upload session task complete";
+        });
+    }
+
+    private void StartNewSessionEpoch(
+        string videoPath, 
+        uint sourceWidth, 
+        uint sourceHeight, 
+        uint targetWidth, 
+        uint targetHeight
+    ) {
+        Debug.Log($"StartNewSessionEpoch video {videoPath} source {sourceWidth}x{sourceHeight} target {targetWidth}x{targetHeight}");
+
+        // initialize the encoder 
+        Debug.Log($"Initialize Epoch CLI encoder with {sourceWidth}x{sourceHeight} -> {targetWidth}x{targetHeight}, saving to {videoPath}");
+        EpochCLI.epoch_cli_initialize_ffmpeg_encoder_consumer(
+            cliInstance,
+            videoPath,
+            encoderCodec,
+            framerate,
+            sourcePixelFormat,
+            sourceWidth, sourceHeight,
+            targetPixelFormat,
+            targetWidth, targetHeight
+        );
+            
+        Debug.Log($"login, auth, and start new session");
+        var newSession = EpochCLI.epoch_cli_login_auth_and_start_new_session(
+            cliInstance,
+            epochCLIEmail,
+            epochCLIPassword,
+            epochCLIProjectURI
+        );
+            
+        epochSessionURI = Marshal.PtrToStringAnsi(newSession.Uri);
+        epochSessionID = newSession.Id;
+    }
+    
+    private void InitializeEpochCLI(string buildPath, string logPath) {
+        Debug.Log($"InitializeEpochCLI build path {buildPath} log path {logPath}");
+
+        cliInstance = EpochCLI.epoch_cli_new(
+            buildPath,
+            logPath,
+            true
+        );
+        
+        Debug.Log("initializaing Epoch CLI");
+        EpochCLI.epoch_cli_initialize(
+            cliInstance, 
+            epochCLIHostname, 
+            1
+        );
+        
+        Debug.Log("Logging in with Epoch CLI");
+        EpochCLI.epoch_cli_login(
+            cliInstance, 
+            epochCLIEmail, 
+            epochCLIPassword
+        );
+    }
+
+    private void OnButtonPressed() {
+        if (isPressed == false) {
+            
+            isPressed = true;
+            rotateImage = true;
+            
+            StartNewSession();
+        }
+        else {
+            isPressed = false;
+            isCLIReady = false;
+            rotateImage = true;
+
+            CompleteAndUploadSession();
         }
     }
-    
-    // Update is called once per frame
-    void Update() {
-        //
-    }
-    
+
     IEnumerator ScreenCaptureRoutine() {
         while (true) {
             yield return new WaitForEndOfFrame(); // Wait until all frame rendering is done
@@ -166,7 +249,7 @@ public class EpochButtonScript : MonoBehaviour {
     }
 
     private void CaptureScreen() {
-        Debug.Log($"capturing screen {frameIdx}");
+        //Debug.Log($"capturing screen {frameIdx}");
         Texture2D screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
         long elapsedMicroseconds = (stopwatch.ElapsedTicks * 1_000_000) / Stopwatch.Frequency;
 
@@ -193,12 +276,12 @@ public class EpochButtonScript : MonoBehaviour {
         UnityEngine.Object.Destroy(screenCapture);
 
         uint expectedBytes = sourceHeight * sourceWidth * 4;
-        Debug.Log($"got {pixels.Length} pixels buffer len {byteArray.Length} for {sourceWidth}x{sourceHeight} expected {expectedBytes}");
+        //Debug.Log($"got {pixels.Length} pixels buffer len {byteArray.Length} for {sourceWidth}x{sourceHeight} expected {expectedBytes}");
         
         GCHandle pinnedArray = GCHandle.Alloc(byteArray, GCHandleType.Pinned);
         IntPtr bufferPtr = pinnedArray.AddrOfPinnedObject();
         
-        Debug.Log($"encoding frame with cli {frameIdx}");
+        //Debug.Log($"encoding frame with cli {frameIdx}");
         EpochCLI.epoch_cli_encode_frame(
             cliInstance,
             (ulong)elapsedMicroseconds,

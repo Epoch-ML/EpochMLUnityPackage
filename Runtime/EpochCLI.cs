@@ -2,12 +2,14 @@ using System;
 using System.Runtime.InteropServices;
 
 public class EpochCLI {
+#if UNITY_IOS && !UNITY_EDITOR
     private const string DllName = "__Internal";
-    //private const string DllName = "epoch_cli_lib";
-    //private const string DllName = "@rpath/epoch_cli_lib.xcframework/epoch_cli_lib";
-
+#else
+    private const string DllName = "epoch_cli_lib"; 
+#endif
+    
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr epoch_cli_new(byte[] buildPath, ulong buildPathLen, bool verbose);
+    public static extern IntPtr epoch_cli_new(string buildPath, string logPath, bool verbose);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern void epoch_cli_destroy(IntPtr cli);
@@ -64,9 +66,12 @@ public class EpochCLI {
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern void epoch_cli_initialize_ffmpeg_encoder_consumer(
         IntPtr cli,
-        string video_filename, // C# automatically marshals string to *const c_char
+        string video_filename, 
+        string target_encoder_codec, 
         uint framerate,
+        string source_pixel_format,
         uint source_width, uint source_height,
+        string target_pixel_format,
         uint target_width, uint target_height
     );
     
