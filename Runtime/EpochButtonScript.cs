@@ -22,10 +22,10 @@ public class EpochButtonScript : MonoBehaviour {
     private string epochCLIBuildPath = "epoch_cli_build_path";
     
     [Header("Epoch Settings")]
-    public string epochCLIHostname = "dev.epochml.com";
+    public string epochCLIHostname = "epochml.com";
     public string epochCLIEmail = "";
     public string epochCLIPassword = "";
-    public string epochCLIProjectURI = "7c95ad89";
+    public string epochCLIProjectURI = "";
     
     private string epochSessionURI = "";
     private uint epochSessionID = 0;
