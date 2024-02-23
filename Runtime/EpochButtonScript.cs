@@ -72,15 +72,12 @@ public class EpochButtonScript : MonoBehaviour {
         
         // Start screen capture routine
         StartCoroutine(ScreenCaptureRoutine());
+        StartCoroutine(RotateImageRoutine());
     }
 
     // Update is called once per frame
     void Update() {
-        if(rotateImage) {
-            Transform epochButtonImageTransform = transform.Find("EpochButtonImage");
-            RectTransform rectTransform = epochButtonImageTransform.GetComponent<RectTransform>();
-            rectTransform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);
-        }
+        
 
         if (newSessionTask != null && newSessionTask.IsCompleted && !isNewSessionTaskCompleted) {
             isNewSessionTaskCompleted = true;
@@ -235,12 +232,35 @@ public class EpochButtonScript : MonoBehaviour {
         }
     }
 
+    IEnumerator RotateImageRoutine() {
+        
+        Transform epochButtonImageTransform = transform.Find("EpochButtonImage");
+        RectTransform rectTransform = epochButtonImageTransform.GetComponent<RectTransform>();
+        
+        float previousTime = Time.realtimeSinceStartup;
+
+        while (true) {
+            float currentTime = Time.realtimeSinceStartup;
+            float deltaTime = currentTime - previousTime;
+            previousTime = currentTime;
+
+            if(rotateImage) {
+                rectTransform.Rotate(0f, 0f, rotationSpeed * deltaTime);
+            }
+
+        yield return null; // Wait for the next frame
+        }
+    }
+
     IEnumerator ScreenCaptureRoutine() {
         while (true) {
             yield return new WaitForEndOfFrame(); // Wait until all frame rendering is done
+            
             if (isPressed & isCLIReady) {
                 CaptureScreen();
             }
+            
+            
         }
     }
 
