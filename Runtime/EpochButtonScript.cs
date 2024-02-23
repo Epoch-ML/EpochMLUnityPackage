@@ -77,7 +77,9 @@ public class EpochButtonScript : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if(rotateImage) {
-            image.transform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);    
+            Transform epochButtonImageTransform = transform.Find("EpochButtonImage");
+            RectTransform rectTransform = epochButtonImageTransform.GetComponent<RectTransform>();
+            rectTransform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);
         }
 
         if (newSessionTask != null && newSessionTask.IsCompleted && !isNewSessionTaskCompleted) {
@@ -220,18 +222,15 @@ public class EpochButtonScript : MonoBehaviour {
     }
 
     private void OnButtonPressed() {
+        rotateImage = true;
+        
         if (isPressed == false) {
-            
             isPressed = true;
-            rotateImage = true;
-            
             StartNewSession();
         }
         else {
             isPressed = false;
             isCLIReady = false;
-            rotateImage = true;
-
             CompleteAndUploadSession();
         }
     }
