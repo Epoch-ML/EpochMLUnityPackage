@@ -1,12 +1,64 @@
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine;
+using UnityEngine.Android;
 
 public class EpochCLI {
 #if UNITY_IOS && !UNITY_EDITOR
     private const string DllName = "__Internal";
+#elif UNITY_ANDROID && !UNITY_EDITOR
+    private const string DllName = "epoch_cli_lib"; 
 #else
     private const string DllName = "epoch_cli_lib"; 
 #endif
+    
+    #if UNITY_ANDROID && !UNITY_EDITOR
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr epoch_cli_init_android_context_internal(IntPtr androidContext);
+    #endif
+
+    private static void epoch_cli_init_android_context() {
+        #if !UNITY_ANDROID || UNITY_EDITOR
+            Debug.LogError("epoch_cli_init_android_context called on non android platform");
+            return;
+        #endif
+
+        try {
+            using (var unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            {
+                if (unityPlayerClass == null) {
+                    Debug.LogError("Failed to load UnityPlayer class");
+                    return;
+                }
+                Debug.Log("loaded UnityPlayer class");
+                
+                AndroidJavaObject currentActivity = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                if (currentActivity == null) {
+                    Debug.LogError("currentActivity is null");
+                    return;
+                }
+                Debug.Log("loaded currentActivity");
+
+                // Use the context as needed
+                #if UNITY_ANDROID && !UNITY_EDITOR
+                        Debug.Log("epoch_cli_init_android_context_internal");
+                        epoch_cli_init_android_context_internal(currentActivity.GetRawObject());
+                #endif
+            }
+        } 
+        catch (Exception ex) {
+            Debug.LogError($"Failed to initialize Android context: {ex.Message}");
+        }
+    }
+
+    public static IntPtr epoch_cli_create(string buildPath, string logPath, bool verbose) {
+        
+        #if UNITY_ANDROID && !UNITY_EDITOR
+            epoch_cli_init_android_context();
+        #endif
+
+        return epoch_cli_new(buildPath, logPath, verbose);
+    }
     
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr epoch_cli_new(string buildPath, string logPath, bool verbose);

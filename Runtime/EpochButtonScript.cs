@@ -43,6 +43,9 @@ public class EpochButtonScript : MonoBehaviour {
     private string videoFilename = "temp_video.mp4";
     private string encoderCodec = "libx264";
     
+    [Header("Debug")]
+    public Text debugText;
+    
     public Stopwatch stopwatch;
 
     private uint frameIdx = 0;
@@ -104,10 +107,16 @@ public class EpochButtonScript : MonoBehaviour {
         Debug.Log($"Running new session async task");
         
         isNewSessionTaskCompleted = false;
-        
-        logFilename = Path.Combine(Application.persistentDataPath, logFilename);
-        epochCLIBuildPath = Path.Combine(Application.persistentDataPath, epochCLIBuildPath);
-        videoFilename = Path.Combine(Application.persistentDataPath, videoFilename);
+
+        //string epochWorkPath = Application.externalStoragePath; 
+        string epochWorkPath = Application.persistentDataPath;
+
+        logFilename = Path.Combine(epochWorkPath, logFilename);
+        epochCLIBuildPath = Path.Combine(epochWorkPath, epochCLIBuildPath);
+        videoFilename = Path.Combine(epochWorkPath, videoFilename);
+
+        debugText.text += "/n";
+        debugText.text += $"{logFilename}";
         
         // Screen resolution and apply aspect ratio to target 
         sourceWidth = (uint)Screen.width;
@@ -115,6 +124,24 @@ public class EpochButtonScript : MonoBehaviour {
         
         float screenAspectRatio = ((float)(sourceHeight) / (float)(sourceWidth));
         targetHeight = (uint)((float)(targetWidth) * screenAspectRatio);
+        
+        // Test to see if we can load the shared lib
+        try {
+            // using (var playerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
+            //     var activity = playerClass.GetStatic<AndroidJavaObject>("currentActivity");
+            //     var context = activity.Call<AndroidJavaObject>("getApplicationContext");
+            //     context.Call("loadLibrary", "epoch_cli_lib");
+            // }
+            
+            using (var systemClass = new AndroidJavaClass("java.lang.System")) {
+                systemClass.CallStatic("loadLibrary", "epoch_cli_lib");
+            }
+        }
+        catch (Exception ex) {
+            Debug.LogError($"Error loading library: {ex.Message}");
+            debugText.text += "/n";
+            debugText.text += $"Error loading library: {ex.Message}";
+        }
         
         newSessionTask = Task.Run(() => {
             InitializeEpochCLI(epochCLIBuildPath, logFilename);
@@ -196,8 +223,14 @@ public class EpochButtonScript : MonoBehaviour {
     
     private void InitializeEpochCLI(string buildPath, string logPath) {
         Debug.Log($"InitializeEpochCLI build path {buildPath} log path {logPath}");
-
-        cliInstance = EpochCLI.epoch_cli_new(
+        
+        // cliInstance = EpochCLI.epoch_cli_new(
+        //     buildPath,
+        //     logPath,
+        //     true
+        // );
+        
+        cliInstance = EpochCLI.epoch_cli_create(
             buildPath,
             logPath,
             true
