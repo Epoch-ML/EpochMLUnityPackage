@@ -103,6 +103,16 @@ public class EpochButtonScript : MonoBehaviour {
         }
     }
 
+    private void debug_text(string text)  {
+        if (debugText) {
+            debugText.text += "/n";
+            debugText.text += $"{text}";
+        }
+        else {
+            Debug.Log(text);    
+        }
+    }
+
     private void StartNewSession() {
         Debug.Log($"Running new session async task");
         
@@ -115,9 +125,8 @@ public class EpochButtonScript : MonoBehaviour {
         epochCLIBuildPath = Path.Combine(epochWorkPath, epochCLIBuildPath);
         videoFilename = Path.Combine(epochWorkPath, videoFilename);
 
-        debugText.text += "/n";
-        debugText.text += $"{logFilename}";
-        
+        debug_text(logFilename);
+
         // Screen resolution and apply aspect ratio to target 
         sourceWidth = (uint)Screen.width;
         sourceHeight = (uint)Screen.height;
@@ -139,8 +148,7 @@ public class EpochButtonScript : MonoBehaviour {
         }
         catch (Exception ex) {
             Debug.LogError($"Error loading library: {ex.Message}");
-            debugText.text += "/n";
-            debugText.text += $"Error loading library: {ex.Message}";
+            debug_text($"Error loading library: {ex.Message}");
         }
         
         newSessionTask = Task.Run(() => {
@@ -255,10 +263,12 @@ public class EpochButtonScript : MonoBehaviour {
         rotateImage = true;
         
         if (isPressed == false) {
+            Debug.Log($"On button pressed - Start new session");
             isPressed = true;
             StartNewSession();
         }
         else {
+            Debug.Log($"On button pressed - End session");
             isPressed = false;
             isCLIReady = false;
             CompleteAndUploadSession();
