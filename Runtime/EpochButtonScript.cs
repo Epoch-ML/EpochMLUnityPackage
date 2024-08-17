@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 using System.Threading.Tasks;
-
+using UnityEditor.UI;
 using Debug = UnityEngine.Debug;
 
 public class EpochButtonScript : MonoBehaviour {
@@ -103,7 +103,7 @@ public class EpochButtonScript : MonoBehaviour {
         }
     }
 
-    private void debug_text(string text)  {
+    private void debugTextOutput(string text)  {
         if (debugText) {
             debugText.text += "/n";
             debugText.text += $"{text}";
@@ -113,6 +113,8 @@ public class EpochButtonScript : MonoBehaviour {
         }
     }
 
+    
+    
     private void StartNewSession() {
         Debug.Log($"Running new session async task");
         
@@ -125,7 +127,7 @@ public class EpochButtonScript : MonoBehaviour {
         epochCLIBuildPath = Path.Combine(epochWorkPath, epochCLIBuildPath);
         videoFilename = Path.Combine(epochWorkPath, videoFilename);
 
-        debug_text(logFilename);
+        debugTextOutput(logFilename);
 
         // Screen resolution and apply aspect ratio to target 
         sourceWidth = (uint)Screen.width;
@@ -133,29 +135,10 @@ public class EpochButtonScript : MonoBehaviour {
         
         float screenAspectRatio = ((float)(sourceHeight) / (float)(sourceWidth));
         targetHeight = (uint)((float)(targetWidth) * screenAspectRatio);
-        
-        // Test to see if we can load the shared lib
-        try {
-            // using (var playerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer")) {
-            //     var activity = playerClass.GetStatic<AndroidJavaObject>("currentActivity");
-            //     var context = activity.Call<AndroidJavaObject>("getApplicationContext");
-            //     context.Call("loadLibrary", "epoch_cli_lib");
-            // }
-            
-            using (var systemClass = new AndroidJavaClass("java.lang.System")) {
-                systemClass.CallStatic("loadLibrary", "epoch_cli_lib");
-            }
-        }
-        catch (Exception ex) {
-            Debug.LogError($"Error loading library: {ex.Message}");
-            debug_text($"Error loading library: {ex.Message}");
-        }
-        
+
         newSessionTask = Task.Run(() => {
             InitializeEpochCLI(epochCLIBuildPath, logFilename);
-            
             StartNewSessionEpoch(videoFilename, sourceWidth, sourceHeight, targetWidth, targetHeight);
-            
             return "new session task complete";
         });
     }
@@ -197,10 +180,8 @@ public class EpochButtonScript : MonoBehaviour {
 
     private void StartNewSessionEpoch(
         string videoPath, 
-        uint sourceWidth, 
-        uint sourceHeight, 
-        uint targetWidth, 
-        uint targetHeight
+        uint sourceWidth, uint sourceHeight, 
+        uint targetWidth, uint targetHeight
     ) {
         Debug.Log($"StartNewSessionEpoch video {videoPath} source {sourceWidth}x{sourceHeight} target {targetWidth}x{targetHeight}");
 
@@ -232,11 +213,16 @@ public class EpochButtonScript : MonoBehaviour {
     private void InitializeEpochCLI(string buildPath, string logPath) {
         Debug.Log($"InitializeEpochCLI build path {buildPath} log path {logPath}");
         
-        // cliInstance = EpochCLI.epoch_cli_new(
-        //     buildPath,
-        //     logPath,
-        //     true
-        // );
+        // Test to see if we can load the shared lib
+        try {
+            using (var systemClass = new AndroidJavaClass("java.lang.System")) {
+                systemClass.CallStatic("loadLibrary", "epoch_cli_lib");
+            }
+        }
+        catch (Exception ex) {
+            Debug.LogError($"Error loading library: {ex.Message}");
+            debugTextOutput($"Error loading library: {ex.Message}");
+        }
         
         cliInstance = EpochCLI.epoch_cli_create(
             buildPath,
@@ -299,11 +285,11 @@ public class EpochButtonScript : MonoBehaviour {
         while (true) {
             yield return new WaitForEndOfFrame(); // Wait until all frame rendering is done
             
-            if (isPressed & isCLIReady) {
-                CaptureScreen();
+            if (isCLIReady) {
+                if (isPressed) {
+                    CaptureScreen();
+                }
             }
-            
-            
         }
     }
 

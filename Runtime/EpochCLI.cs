@@ -128,6 +128,22 @@ public class EpochCLI {
     );
     
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void epoch_cli_initialize_dashcam(
+        IntPtr cli,
+        string dashcam_video_filename,
+        uint dashcam_seconds,
+        string target_encoder_codec, 
+        uint framerate,
+        string source_pixel_format,
+        uint source_width, uint source_height,
+        string target_pixel_format,
+        uint target_width, uint target_height
+    );
+    
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void epoch_cli_save_dashcam(IntPtr cli);
+    
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern void epoch_cli_finalize_ffmpeg_encoder_consumer(IntPtr cli);
     
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
