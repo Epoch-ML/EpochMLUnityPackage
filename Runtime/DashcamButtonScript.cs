@@ -22,16 +22,18 @@ public class DashcamButtonScript : MonoBehaviour {
     private string epochCLIBuildPath = "epoch_cli_build_path";
 
     public bool enableOnRun = true;
-    public uint dashcamMinutes = 1;
+    public uint secondsToRecord = 60;
     
     [Header("Epoch Settings")]
-    public string epochCLIHostname = "epochml.com";
-    public string epochCLIEmail = "";
-    public string epochCLIPassword = "";
-    public string epochCLIProjectURI = "";
+    public string hostname = "epochml.com";
+    public bool secure = true;
+    public string projectApiToken = "";
     
-    private string epochSessionURI = "";
-    private uint epochSessionID = 0;
+    private string email = "";
+    private string password = "";
+    
+    private string sessionURI = "";
+    private uint sessionID = 0;
     private string logFilename = "epoch_cli_lib.log";
     
     [Header("Video Settings")]
@@ -43,12 +45,9 @@ public class DashcamButtonScript : MonoBehaviour {
     
     private uint sourceWidth = 0;
     private uint sourceHeight = 0;
-    private string videoFilename = "temp_video.mp4";
+    private string dashcamFilename = "dashcam.mp4";
     private string encoderCodec = "libx264";
-    
-    [Header("Debug")]
-    public Text debugText;
-    
+
     public Stopwatch stopwatch;
 
     private uint frameIdx = 0;
@@ -61,10 +60,15 @@ public class DashcamButtonScript : MonoBehaviour {
 
     private bool isSartDashcamTaskCompleted = false;
     private Task<string> startDashcamTask;
+
+    [Header("Issue Popup")] 
+    public GameObject popupPanel;
+    public InputField titleInputField;
+    public InputField descriptionInputField;
+    public Button submitButton;
     
-    // TODO: this
-    // private bool isUploadSessionTaskCompleted = false;
-    // private Task<string> uploadSessionTask;
+    [Header("Debug")]
+    public Text debugText;
     
     // Start is called before the first frame update
     void Start() {
@@ -73,14 +77,20 @@ public class DashcamButtonScript : MonoBehaviour {
         Transform epochButtonImageTransform = transform.Find("DashcamButtonImage");
         image = epochButtonImageTransform.GetComponent<Image>();
 
+        // This will show the pop-up
         button.onClick.AddListener(OnButtonPressed);
+        
+        // Add listener to the submit button on the pop-up
+        submitButton.onClick.AddListener(OnSubmitPressed);
+        
+        // disable popup
+        popupPanel.SetActive(false);
         
         // Start screen capture routine
         StartCoroutine(ScreenCaptureRoutine());
         StartCoroutine(RotateImageRoutine());
 
-        if (enableOnRun)
-        {
+        if (enableOnRun) {
             Debug.Log($"Starting dashcam on run");
             StartDashcam();
         }
@@ -89,9 +99,9 @@ public class DashcamButtonScript : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         
-
         if (startDashcamTask != null && startDashcamTask.IsCompleted && !isSartDashcamTaskCompleted) {
             isSartDashcamTaskCompleted = true;
+            
             Debug.Log("start dashcam task complete");
 
             image.sprite = imageActive;
@@ -100,6 +110,16 @@ public class DashcamButtonScript : MonoBehaviour {
             image.transform.rotation = Quaternion.identity;
             stopwatch = Stopwatch.StartNew();
             
+        }
+        
+        if (
+            Input.GetKeyDown(KeyCode.E)  
+            //&& (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl)) && 
+            //(Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+        ) {
+            Debug.Log("dashcam shortcut selected");
+            
+            OnButtonPressed();
         }
     }
 
@@ -123,7 +143,7 @@ public class DashcamButtonScript : MonoBehaviour {
 
         logFilename = Path.Combine(epochWorkPath, logFilename);
         epochCLIBuildPath = Path.Combine(epochWorkPath, epochCLIBuildPath);
-        videoFilename = Path.Combine(epochWorkPath, videoFilename);
+        dashcamFilename = Path.Combine(epochWorkPath, dashcamFilename);
 
         debugTextOutput(logFilename);
 
@@ -137,12 +157,13 @@ public class DashcamButtonScript : MonoBehaviour {
         startDashcamTask = Task.Run(() => {
             InitializeEpochCLI(epochCLIBuildPath, logFilename);
             StartDashcamEpoch(
-                videoFilename, 
+                dashcamFilename, 
                 sourceWidth, 
                 sourceHeight, 
                 targetWidth, 
                 targetHeight
             );
+            
             return "start dashcam task complete";
         });
     }
@@ -159,7 +180,7 @@ public class DashcamButtonScript : MonoBehaviour {
         EpochCLI.epoch_cli_initialize_dashcam(
             cliInstance,
             videoPath,
-            dashcamMinutes * 60,
+            secondsToRecord,
             encoderCodec,
             framerate,
             sourcePixelFormat,
@@ -167,18 +188,6 @@ public class DashcamButtonScript : MonoBehaviour {
             targetPixelFormat,
             targetWidth, targetHeight
         );
-            
-        // TODO: add session tracking, even without video etc
-        // Debug.Log($"login, auth, and start new session");
-        // var newSession = EpochCLI.epoch_cli_login_auth_and_start_new_session(
-        //     cliInstance,
-        //     epochCLIEmail,
-        //     epochCLIPassword,
-        //     epochCLIProjectURI
-        // );
-        //     
-        // epochSessionURI = Marshal.PtrToStringAnsi(newSession.Uri);
-        // epochSessionID = newSession.Id;
     }
     
     private void InitializeEpochCLI(string buildPath, string logPath) {
@@ -204,23 +213,48 @@ public class DashcamButtonScript : MonoBehaviour {
         Debug.Log("initializaing Epoch CLI");
         EpochCLI.epoch_cli_initialize(
             cliInstance, 
-            epochCLIHostname, 
-            1
+            hostname, 
+            secure ? 1 : 0
         );
         
-        Debug.Log("Logging in with Epoch CLI");
-        EpochCLI.epoch_cli_login(
-            cliInstance, 
-            epochCLIEmail, 
-            epochCLIPassword
-        );
+        Debug.Log("CLI initialized ...");
     }
 
     private void OnButtonPressed() {
-        // TODO: save the dashcam video here
-        // TODO: upload and create a session 
+        Debug.Log($"dashcam button pressed!");
         
-        Debug.LogError($"dashcam button pressed");
+        // Show the pop-up dialog
+        popupPanel.SetActive(true);
+        
+        // Pause the game
+        Time.timeScale = 0f;
+    }
+
+    private void OnSubmitPressed() {
+        // Get the input values
+        string issueTitle = titleInputField.text;
+        string issueDescription = descriptionInputField.text;
+        
+        if (string.IsNullOrEmpty(issueTitle) || string.IsNullOrEmpty(issueDescription)) {
+            // Show an error message to the user (you can display this in the UI)
+            Debug.LogWarning("Please enter both issue name and description.");
+            return;
+        }
+        
+        // create and upload issue
+        EpochCLI.upload_dashcam_issue(
+            cliInstance,
+            projectApiToken,
+            issueTitle,
+            issueDescription,
+            "open"
+        );
+        
+        // Hide the pop-up dialog
+        popupPanel.SetActive(false);
+        
+        // Resume the game
+        Time.timeScale = 1f;
     }
 
     IEnumerator RotateImageRoutine() {

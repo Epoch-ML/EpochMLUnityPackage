@@ -141,6 +141,15 @@ public class EpochCLI {
     );
     
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void upload_dashcam_issue(
+        IntPtr cli,
+        string project_token,
+        string title,
+        string description,
+        string status
+    );
+    
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern void epoch_cli_save_dashcam(IntPtr cli);
     
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
