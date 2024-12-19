@@ -208,7 +208,7 @@ PrefabInstance:
     - target: {fileID: -1635655201967511695, guid: f59eb56a39ab7cf44a1cbd07dba87bb0,
         type: 3}
       propertyPath: password
-      value: Fasfusa19!
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: -1635655201967511695, guid: f59eb56a39ab7cf44a1cbd07dba87bb0,
         type: 3}
@@ -223,7 +223,7 @@ PrefabInstance:
     - target: {fileID: -1635655201967511695, guid: f59eb56a39ab7cf44a1cbd07dba87bb0,
         type: 3}
       propertyPath: epochCLIPassword
-      value: Fasfusa19!
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6122215128299077840, guid: f59eb56a39ab7cf44a1cbd07dba87bb0,
         type: 3}

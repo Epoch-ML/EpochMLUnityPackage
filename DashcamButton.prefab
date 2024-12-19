@@ -215,7 +215,7 @@ MonoBehaviour:
   dashcamMinutes: 1
   epochCLIHostname: epochml.com
   epochCLIEmail: idan@epochml.com
-  epochCLIPassword: Fafusa19!
+  epochCLIPassword: 
   epochCLIProjectURI: 7c95ad89
   sourcePixelFormat: bgra
   targetPixelFormat: yuv420p
